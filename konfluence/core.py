@@ -46,13 +46,17 @@ class KonfCategory(object):
 
 
 class Konfluence(Singleton):
-    def __init__(self):
-        if not os.getenv('KONFLUENCE_PATH'):
-            self.pather = Pather(paths=['/etc/konfluence', '~/.konfluence', './konf'])
-        else:
-            self.pather = Pather(env_var='KONFLUENCE_PATH')
+    _inited = False
 
-        self.categories = {}
+    def __init__(self):
+        if not self._inited:
+            if not os.getenv('KONFLUENCE_PATH'):
+                self.pather = Pather(paths=['/etc/konfluence', '~/.konfluence', './konf'])
+            else:
+                self.pather = Pather(env_var='KONFLUENCE_PATH')
+
+            self.categories = {}
+            self._inited = True
 
     def register(self, name, klass=None, init_arg=None, generator=None):
         self.categories[name] = KonfCategory(name,

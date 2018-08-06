@@ -1,0 +1,7 @@
+{
+  "name": "jester",
+  "type": "normal",
+  "base_cmap_name": "jet",
+  "clip_min": 0.3,
+  "clip_max": 0.7
+}
