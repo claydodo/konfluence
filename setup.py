@@ -8,7 +8,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="konfluence",
-    version="0.0.2",
+    version="0.0.3",
     author="claydodo and his little friends (xiao huo ban)",
     author_email="claydodo@foxmail.com",
     description="A conf system",
@@ -22,7 +22,7 @@ setuptools.setup(
     ),
     install_requires=[
         'six',
-        'krux >= 0.0.1',
-        'krust >= 0.0.2'
+        'krux',
+        'krust'
     ]
 )
