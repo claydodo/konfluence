@@ -5,7 +5,11 @@ import os
 import json
 
 from krux.types import Singleton
+from krux.converters import parse_bool
+from krux.functools.cache import cache
 from krust.pather import *
+
+__all__ = ['KonfCategory', 'Konfluence', 'konfer']
 
 
 class KonfCategory(object):
@@ -26,12 +30,12 @@ class KonfCategory(object):
         else:
             raise KeyError(u'Not a valid key for KonfCategory {}: {}'.format(self.name, repr(key)))
 
-        if self.init_arg is None:
+        if not self.init_arg:
             obj = self.klass(**para)
         else:
             obj = self.klass(**{self.init_arg: para})
 
-        if self.generator is None:
+        if not self.generator:
             return obj
         else:
             return getattr(obj, self.generator)(*args)
@@ -50,13 +54,20 @@ class Konfluence(Singleton):
 
     def __init__(self):
         if not self._inited:
+            self.use_django = parse_bool(os.getenv('KONFLUENCE_USE_DJANGO', False))
             if not os.getenv('KONFLUENCE_PATH'):
                 self.pather = Pather(paths=['/etc/konfluence', '~/.konfluence', './konf'])
             else:
                 self.pather = Pather(env_var='KONFLUENCE_PATH')
-
             self.categories = {}
             self._inited = True
+
+    @property
+    @cache
+    def DJCategory(self):
+        # delay importing Category, to prevent recursive dependency.
+        from .models import Category
+        return Category
 
     def register(self, name, klass=None, init_arg=None, generator=None):
         self.categories[name] = KonfCategory(name,
@@ -75,15 +86,19 @@ class Konfluence(Singleton):
 
         if default is None:
             return default
-        elif isinstance(default, six.string_types):
+        elif isinstance(default, six.string_types) and '/' in default:
+            # 针对default是一个含有catname部分的key的情形
             return self.__getitem__(default)
         else:
+            # default是字典, 或不含catname的key等.
             catname, sub = key.split('/', 1)
             return self._get_from_category(catname, default)
 
     def _get_from_category(self, category, key):
-        if not isinstance(category, KonfCategory):
-            category = self.categories[category]
+        if self.use_django:
+            category = self._ensure_dj_category(category)
+        else:
+            category = self._ensure_fs_category(category)
 
         if isinstance(key, six.string_types):
             tks = key.split(':')
@@ -93,4 +108,15 @@ class Konfluence(Singleton):
         else:
             return key
 
+    def _ensure_dj_category(self, category):
+        if isinstance(category, six.string_types):
+            category = self.DJCategory.objects.get(name=category)
+        return category
 
+    def _ensure_fs_category(self, category):
+        if not isinstance(category, KonfCategory):
+            category = self.categories[category]
+        return category
+
+
+konfer = Konfluence()
