@@ -101,8 +101,11 @@ class Konfluence(Singleton):
             category = self._ensure_fs_category(category)
 
         if isinstance(key, six.string_types):
-            tks = key.split(':')
-            return category.get(*tks)
+            if key == '*':
+                return category.get_all()
+            else:
+                tks = key.split(':')
+                return category.get(*tks)
         elif isinstance(key, dict):
             return category.get(key)
         else:

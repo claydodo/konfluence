@@ -30,9 +30,10 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ['category', 'name', 'para_']
-    list_filter = ['category']
+    list_display = ['category', 'name', 'active', 'para_']
+    list_filter = ['active', 'category']
     search_fields = ['name']
+    actions = ['activate', 'deactivate', 'toggle_active']
 
     def para_(self, obj):
         compact_json = json.dumps(obj.para)[:80]
@@ -40,3 +41,26 @@ class ItemAdmin(admin.ModelAdmin):
         return rich_tag(text=compact_json, hint=full_json)
     para_.allow_tags = True
 
+    def activate(self, request, queryset):
+        for item in queryset.all():
+            try:
+                item.active = True
+                item.save()
+            except Exception as e:
+                six.print_(e)
+
+    def deactivate(self, request, queryset):
+        for item in queryset.all():
+            try:
+                item.active = False
+                item.save()
+            except Exception as e:
+                six.print_(e)
+
+    def toggle_active(self, request, queryset):
+        for item in queryset.all():
+            try:
+                item.active = not item.active
+                item.save()
+            except Exception as e:
+                six.print_(e)

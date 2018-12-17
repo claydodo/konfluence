@@ -32,7 +32,7 @@ class Category(models.Model):
             para = para.copy()
             para.setdefault('name', key)
         elif isinstance(key, dict):
-            para = key
+            para = key.copy()
         else:
             raise KeyError(u'Not a valid key for KonfCategory {}: {}'.format(self.name, key))
 
@@ -49,6 +49,15 @@ class Category(models.Model):
         else:
             return getattr(obj, self.generator)(*args)
 
+    def get_all(self):
+        results = []
+        for item in self.items.filter(active=True):
+            try:
+                results.append(self.get(item.para))
+            except Exception as e:
+                pass
+        return results
+
 
 @six.python_2_unicode_compatible
 class Item(models.Model):
@@ -58,6 +67,8 @@ class Item(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='items')
     name = models.CharField(max_length=128)
     para = JSONField(default=dict, null=True, blank=True)
+
+    active = models.BooleanField(default=True)
 
     def __str__(self):
         return u"{}/{}".format(self.category.name, self.name)
